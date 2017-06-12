@@ -11,3 +11,6 @@ class JustQueueError(Exception):
 
 class UnsupportedTypeError(JustQueueError):
     pass
+
+class EmptyQueueError(JustQueueError):
+    pass
