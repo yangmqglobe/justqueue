@@ -18,13 +18,16 @@ class FIFOQueue(object):
     _sql_get = 'SELECT "item", "type" FROM "fifoqueue" ORDER BY "id" LIMIT ?'
     _sql_del = 'DELETE FROM "fifoqueue" WHERE "id" IN (SELECT "id" FROM "fifoqueue" ORDER BY "id" LIMIT ?)'
 
-    def __init__(self, path, items=None):
+    def __init__(self, path, items=None, overwrite=False):
         """
         init the queue
         :param path: the path you want to store the sqlite db file
         :param items: push some items when init the queue, iterable
+        :param overwrite: overwrite the queue db file if it has exist?
         """
         self.path = os.path.abspath(path)
+        if overwrite and os.path.exists(self.path):
+            os.remove(self.path)
         self.conn = sqlite3.connect(self.path)
         with self.conn as conn:
             conn.execute(self._sql_create)
