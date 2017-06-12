@@ -4,6 +4,7 @@
 # file: fifoqueue.py
 # time: 2017/6/11
 from .utils import tran_item, reduce_item
+from .utils import not_closed
 from .exceptions import EmptyQueueError
 import os
 import sqlite3
@@ -30,6 +31,7 @@ class FIFOQueue(object):
             if items:
                 conn.executemany(self._sql_push, (tran_item(item) for item in items))
 
+    @not_closed
     def __len__(self):
         """
         get the size of this queue
@@ -39,6 +41,7 @@ class FIFOQueue(object):
             size, = conn.execute(self._sql_len).fetchone()
             return size
 
+    @not_closed
     def close(self, remove=True):
         """
         close the connection with the db
@@ -49,6 +52,7 @@ class FIFOQueue(object):
         if size == 0 and remove:
             os.remove(self.path)
 
+    @not_closed
     def peek(self):
         """
         get the first item in this queue but would not delete it
@@ -61,6 +65,7 @@ class FIFOQueue(object):
                 raise EmptyQueueError('Peek an empty queue')
             return reduce_item(value, type_)
 
+    @not_closed
     def peeks(self, num):
         """
         generate the items which are locate at the beginning of this queue but would not delete them
@@ -71,6 +76,7 @@ class FIFOQueue(object):
             for value, type_ in conn.execute(self._sql_get, (num,)).fetchall():
                 yield reduce_item(value, type_)
 
+    @not_closed
     def pop(self):
         """
         get the first item in this queue and delete it
@@ -84,6 +90,7 @@ class FIFOQueue(object):
             conn.execute(self._sql_del, (1,))
             return reduce_item(value, type_)
 
+    @not_closed
     def pops(self, num):
         """
         generate the items which are locate at the beginning of this queue and delete them
