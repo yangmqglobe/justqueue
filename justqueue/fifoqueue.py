@@ -13,7 +13,7 @@ import sqlite3
 class FIFOQueue(object):
     _sql_create = """CREATE TABLE IF NOT EXISTS "fifoqueue"
                       ("id" INTEGER PRIMARY KEY AUTOINCREMENT , "item" TEXT, "type" TEXT)"""
-    _sql_push = 'INSERT INTO "fifoqueue" ("item", "type") VALUES (?, ?)'
+    _sql_add = 'INSERT INTO "fifoqueue" ("item", "type") VALUES (?, ?)'
     _sql_len = 'SELECT COUNT("id") FROM "fifoqueue"'
     _sql_get = 'SELECT "item", "type" FROM "fifoqueue" ORDER BY "id" LIMIT ?'
     _sql_del = 'DELETE FROM "fifoqueue" WHERE "id" IN (SELECT "id" FROM "fifoqueue" ORDER BY "id" LIMIT ?)'
@@ -32,7 +32,7 @@ class FIFOQueue(object):
         with self.conn as conn:
             conn.execute(self._sql_create)
             if items:
-                conn.executemany(self._sql_push, (tran_item(item) for item in items))
+                conn.executemany(self._sql_add, (tran_item(item) for item in items))
 
     @not_closed
     def __len__(self):
@@ -104,3 +104,21 @@ class FIFOQueue(object):
             for value, type_ in conn.execute(self._sql_get, (num,)).fetchall():
                 yield reduce_item(value, type_)
                 conn.execute(self._sql_del, (1,))
+
+    @not_closed
+    def push(self, item):
+        """
+        push an item into the queue
+        :param item: an item which need to push into the queue
+        """
+        with self.conn as conn:
+            conn.execute(self._sql_add, tran_item(item))
+
+    @not_closed
+    def pushes(self, items):
+        """
+        push some items into the queue
+        :param items: items which need to push into the queue, iterable
+        """
+        with self.conn as conn:
+            conn.executemany(self._sql_add, (tran_item(item) for item in items))
