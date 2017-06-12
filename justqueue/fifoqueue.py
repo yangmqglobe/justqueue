@@ -122,3 +122,52 @@ class FIFOQueue(object):
         """
         with self.conn as conn:
             conn.executemany(self._sql_add, (tran_item(item) for item in items))
+
+    @not_closed
+    def __next__(self):
+        """
+        make the queue iterable, just call the pop
+        """
+        try:
+            return self.pop()
+        except EmptyQueueError:
+            raise StopIteration('This queue is empty')
+
+    @not_closed
+    def __iter__(self):
+        """
+        handle the for operation
+        """
+        return self
+
+    def __eq__(self, other):
+        """
+        handle == operation, only compare the db path
+        :param other: the other obj
+        :return: True if the queue is bind on the same db file
+        """
+        return isinstance(other, FIFOQueue) and self.path == other.path
+
+    def __ne__(self, other):
+        """
+        handle != operation, only compare the db path
+        :param other: the other obj
+        :return: False if the queue is bind on the same db file
+        """
+        return not self.__eq__(other)
+
+    def __enter__(self):
+        """
+        handle the with operation
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        auto close the queue when exit the with block
+        """
+        self.close()
+        return True
+
+    def __repr__(self):
+        return '<FIFOQueue bind on {}>'.format(self.path)
