@@ -1,17 +1,17 @@
 # -*- coding:utf-8 -*-
 #
 # author: yangmqglobe
-# file: justqueue.py
+# file: fifoqueue.py
 # time: 2017/6/11
-from .exceptions import *
+from .utils import tran_item
 import os
 import sqlite3
 
 
-class JustQueue(object):
+class FIFOQueue(object):
     _sql_create = """CREATE TABLE IF NOT EXISTS "justqueue"
-                      ("id" INTEGER PRIMARY KEY AUTOINCREMENT , "item" TEXT)"""
-    _sql_push = 'INSERT INTO "justqueue" ("item") VALUES (?)'
+                      ("id" INTEGER PRIMARY KEY AUTOINCREMENT , "item" TEXT, "type" TEXT)"""
+    _sql_push = 'INSERT INTO "justqueue" ("item", "type") VALUES (?, ?)'
     _sql_len = 'SELECT COUNT("id") FROM "justqueue"'
 
     def __init__(self, path, items=None):
@@ -25,10 +25,7 @@ class JustQueue(object):
         with self.conn as conn:
             conn.execute(self._sql_create)
             if items:
-                try:
-                    conn.executemany(self._sql_push, ((item,) for item in items))
-                except sqlite3.InterfaceError:
-                    raise UnsupportedTypeError('got an unsupported item')
+                conn.executemany(self._sql_push, (tran_item(item) for item in items))
 
     def __len__(self):
         with self.conn as conn:
