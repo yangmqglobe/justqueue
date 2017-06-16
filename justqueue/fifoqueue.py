@@ -76,8 +76,8 @@ class FIFOQueue(object):
         :return: items which are locate at the beginning of this queue(generator)
         """
         with self.conn as conn:
-            for value, type_ in conn.execute(self._sql_get, (num,)).fetchall():
-                yield reduce_item(value, type_)
+            items = conn.execute(self._sql_get, (num,)).fetchall()
+            return (reduce_item(value, type_) for value, type_ in items)
 
     @not_closed
     def pop(self):
@@ -101,9 +101,9 @@ class FIFOQueue(object):
         :return: items which are locate at the beginning of this queue(generator)
         """
         with self.conn as conn:
-            for value, type_ in conn.execute(self._sql_get, (num,)).fetchall():
-                yield reduce_item(value, type_)
-                conn.execute(self._sql_del, (1,))
+            items = conn.execute(self._sql_get, (num,)).fetchall()
+            conn.execute(self._sql_del, (num,))
+            return (reduce_item(value, type_) for value, type_ in items)
 
     @not_closed
     def push(self, item):
