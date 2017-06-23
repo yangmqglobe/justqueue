@@ -7,19 +7,22 @@ from functools import wraps
 from sqlite3 import ProgrammingError
 from .exceptions import UnsupportedTypeError
 from .exceptions import QueueClosedError
+import json
 
 # functions use to tran the item to str to store in db
 _tran_item = {
     int: lambda item: (str(item), 'int'),
     float: lambda item: (str(item), 'float'),
-    str: lambda item: (item, 'str')
+    str: lambda item: (item, 'str'),
+    dict: lambda item: (json.dumps(item), 'dict')
 }
 
 # functions use to reduce the item to it's original type
 _reduce_item = {
     'int': lambda value: int(value),
     'float': lambda value: float(value),
-    'str': lambda value: value
+    'str': lambda value: value,
+    'dict': lambda value: json.loads(value)
 }
 
 
@@ -40,7 +43,7 @@ def reduce_item(value, type_):
     reduce the item to it's original type
     :param value: item's str
     :param type_: item's original type
-    :return:
+    :return: item
     """
     return _reduce_item[type_](value)
 
