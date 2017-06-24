@@ -14,7 +14,8 @@ _tran_item = {
     int: lambda item: (str(item), 'int'),
     float: lambda item: (str(item), 'float'),
     str: lambda item: (item, 'str'),
-    dict: lambda item: (json.dumps(item), 'dict')
+    dict: lambda item: (json.dumps(item), 'dict'),
+    list: lambda item: (json.dumps(item), 'list')
 }
 
 # functions use to reduce the item to it's original type
@@ -22,7 +23,8 @@ _reduce_item = {
     'int': lambda value: int(value),
     'float': lambda value: float(value),
     'str': lambda value: value,
-    'dict': lambda value: json.loads(value)
+    'dict': lambda value: json.loads(value),
+    'list': lambda value: json.loads(value)
 }
 
 
@@ -36,6 +38,8 @@ def tran_item(item):
         return _tran_item[type(item)](item)
     except KeyError:
         raise UnsupportedTypeError('type {} is not supported'.format(type(item)))
+    except TypeError:
+        raise UnsupportedTypeError('item {} is not JSON serializable'.format(item))
 
 
 def reduce_item(value, type_):
