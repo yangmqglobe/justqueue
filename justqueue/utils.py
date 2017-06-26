@@ -9,13 +9,23 @@ from .exceptions import UnsupportedTypeError
 from .exceptions import QueueClosedError
 import json
 
+
+class RetryItem(object):
+    def __init__(self, item, retry):
+        self.item = item
+        self.retry = retry
+
+    def tran(self):
+        return json.dumps({'item': self.item, 'retry': self.retry})
+
 # functions use to tran the item to str to store in db
 _tran_item = {
     int: lambda item: (str(item), 'int'),
     float: lambda item: (str(item), 'float'),
     str: lambda item: (item, 'str'),
     dict: lambda item: (json.dumps(item), 'dict'),
-    list: lambda item: (json.dumps(item), 'list')
+    list: lambda item: (json.dumps(item), 'list'),
+    RetryItem: lambda item: (item.tran(), 'retry')
 }
 
 # functions use to reduce the item to it's original type
@@ -24,7 +34,8 @@ _reduce_item = {
     'float': lambda value: float(value),
     'str': lambda value: value,
     'dict': lambda value: json.loads(value),
-    'list': lambda value: json.loads(value)
+    'list': lambda value: json.loads(value),
+    'retry': lambda value: json.loads(value)['item']
 }
 
 

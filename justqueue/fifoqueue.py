@@ -11,8 +11,8 @@ import sqlite3
 
 
 class FIFOQueue(object):
-    _sql_create = """CREATE TABLE IF NOT EXISTS "fifoqueue"
-                      ("id" INTEGER PRIMARY KEY AUTOINCREMENT , "item" TEXT, "type" TEXT)"""
+    _sql_create = 'CREATE TABLE IF NOT EXISTS "fifoqueue"' \
+                  '("id" INTEGER PRIMARY KEY AUTOINCREMENT , "item" TEXT, "type" TEXT)'
     _sql_add = 'INSERT INTO "fifoqueue" ("item", "type") VALUES (?, ?)'
     _sql_len = 'SELECT COUNT("id") FROM "fifoqueue"'
     _sql_get = 'SELECT "item", "type" FROM "fifoqueue" ORDER BY "id" LIMIT ?'

@@ -5,6 +5,7 @@
 # time: 2017/6/24
 from justqueue import FIFOQueue
 from justqueue import exceptions
+from justqueue.utils import RetryItem
 import unittest
 import os
 
@@ -100,6 +101,24 @@ class TestFIFOQueue(unittest.TestCase):
         self.queue = FIFOQueue('test', range(100))
         for test, item in zip(range(100), self.queue):
             self.assertEqual(test, item)
+
+    def test_retry_item(self):
+        self.queue = FIFOQueue('test')
+        # make sure int is supported
+        self.queue.push(RetryItem(1, 1))
+        self.assertEqual(self.queue.pop(), 1)
+        # make sure float is supported
+        self.queue.push(RetryItem(2.2, 2))
+        self.assertEqual(self.queue.pop(), 2.2)
+        # make sure str is supported
+        self.queue.push(RetryItem('3', 3))
+        self.assertEqual(self.queue.pop(), '3')
+        # make sure list is supported
+        self.queue.push(RetryItem([1, 2.2, '3', {'4': 4}], 4))
+        self.assertEqual(self.queue.pop(), [1, 2.2, '3', {'4': 4}])
+        # make dict int is supported
+        self.queue.push(RetryItem({'a': 1, 'b': 2.2, 'c': '3.3', 'd': [4], 'e': {'f': 'f'}}, 5))
+        self.assertEqual(self.queue.pop(), {'a': 1, 'b': 2.2, 'c': '3.3', 'd': [4], 'e': {'f': 'f'}})
 
 if __name__ == '__main__':
     unittest.main()
