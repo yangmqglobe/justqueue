@@ -6,6 +6,7 @@
 from justqueue import FIFOQueue
 from justqueue import exceptions
 from justqueue.utils import RetryItem
+from itertools import chain, repeat
 import unittest
 import os
 
@@ -119,6 +120,33 @@ class TestFIFOQueue(unittest.TestCase):
         # make dict int is supported
         self.queue.push(RetryItem({'a': 1, 'b': 2.2, 'c': '3.3', 'd': [4], 'e': {'f': 'f'}}, 5))
         self.assertEqual(self.queue.pop(), {'a': 1, 'b': 2.2, 'c': '3.3', 'd': [4], 'e': {'f': 'f'}})
+
+    def test_map_single(self):
+        self.queue = FIFOQueue('test', range(10))
+        results = self.queue.map(lambda x: 1/x, (ZeroDivisionError, TypeError), max_try=5)
+        for i, result in zip(chain(range(1, 10), repeat(0, 4)), results):
+            if isinstance(result, Exception):
+                self.assertEqual(result.item, i)
+            else:
+                self.assertEqual(result, 1/i)
+
+    def test_map_list(self):
+        self.queue = FIFOQueue('test', ([a, b] for a, b in zip(repeat(1), range(10))))
+        results = self.queue.map(lambda x, y: x / y, (ZeroDivisionError, TypeError), max_try=5, unpack=True)
+        for i, result in zip(chain(range(1, 10), repeat(0, 4)), results):
+            if isinstance(result, Exception):
+                self.assertEqual(result.item, [1, 0])
+            else:
+                self.assertEqual(result, 1 / i)
+
+    def test_map_dict(self):
+        self.queue = FIFOQueue('test', ({'x': a, 'y': b} for a, b in zip(repeat(1), range(10))))
+        results = self.queue.map(lambda x, y: x / y, (ZeroDivisionError, TypeError), max_try=5, unpack=True)
+        for i, result in zip(chain(range(1, 10), repeat(0, 4)), results):
+            if isinstance(result, Exception):
+                self.assertEqual(result.item, {'x': 1, 'y': 0})
+            else:
+                self.assertEqual(result, 1 / i)
 
 if __name__ == '__main__':
     unittest.main()

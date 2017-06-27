@@ -11,12 +11,15 @@ import json
 
 
 class RetryItem(object):
-    def __init__(self, item, retry):
+    """
+    label an item which need to retry
+    """
+    def __init__(self, item, again):
         self.item = item
-        self.retry = retry
+        self.again = again
 
     def tran(self):
-        return json.dumps({'item': self.item, 'retry': self.retry})
+        return json.dumps({'item': self.item, 'again': self.again})
 
 # functions use to tran the item to str to store in db
 _tran_item = {
@@ -53,13 +56,21 @@ def tran_item(item):
         raise UnsupportedTypeError('item {} is not JSON serializable'.format(item))
 
 
-def reduce_item(value, type_):
+def reduce_item(value, type_, retry=False, max_try=0):
     """
     reduce the item to it's original type
     :param value: item's str
     :param type_: item's original type
+    :param retry: need retry information?
+    :param max_try: max retry
     :return: item
     """
+    if retry:
+        if type_ == 'retry':
+            item = json.loads(value)
+            return item['item'], item['again']
+        else:
+            return _reduce_item[type_](value), max_try
     return _reduce_item[type_](value)
 
 
@@ -76,4 +87,3 @@ def not_closed(func):
         except ProgrammingError:
             raise QueueClosedError('This queue has been closed')
     return wrapper
-

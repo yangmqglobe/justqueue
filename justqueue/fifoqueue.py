@@ -5,9 +5,11 @@
 # time: 2017/6/11
 from .utils import tran_item, reduce_item
 from .utils import not_closed
+from .utils import RetryItem
 from .exceptions import EmptyQueueError
 import os
 import sqlite3
+import time
 
 
 class FIFOQueue(object):
@@ -171,3 +173,56 @@ class FIFOQueue(object):
 
     def __repr__(self):
         return '<FIFOQueue bind on {}>'.format(self.path)
+
+    def map(self, func, exceptions=Exception, max_try=0, sleep=0, unpack=False):
+        """
+        map all item to the given function, yield the result
+        :param func: given function
+        :param exceptions: retry when these exceptions be raise
+        :param max_try: just try max_try times
+        :param sleep: sleep given seconds when finish one task
+        :param unpack: unpack the item as params to the function
+        :return: yield the result or the exception
+        """
+        while self:
+            # get the first item in the queue
+            with self.conn as conn:
+                value, type_ = conn.execute(self._sql_get, (1,)).fetchone()
+            item, again = reduce_item(value, type_, True, max_try)
+            # try to call the function
+            try:
+                if unpack:
+                    # unpack the item
+                    if type(item) == list:
+                        yield func(*item)
+                    elif type(item) == dict:
+                        yield func(**item)
+                    else:
+                        yield func(item)
+                else:
+                    yield func(item)
+            # catch the given exceptions
+            except exceptions as e:
+                if again > 1:
+                    # push this item back to the queue and try again
+                    with self.conn as conn:
+                        conn.execute(self._sql_add, tran_item(RetryItem(item, again-1)))
+                elif again == 1:
+                    # max try, yield the exception
+                    e.item = item
+                    e.fatal = False
+                    yield e
+                else:
+                    with self.conn as conn:
+                        conn.execute(self._sql_add, tran_item(item))
+            # catch the non-given exceptions
+            except Exception as e:
+                # yield the fatal error
+                e.item = item
+                e.fatal = True
+                yield e
+            finally:
+                # delete the first item and sleep
+                with self.conn as conn:
+                    conn.execute(self._sql_del, (1,))
+                time.sleep(sleep)
